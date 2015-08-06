@@ -1,4 +1,7 @@
-DESCRIPTION = "U-boot bootloader"
+require recipes-bsp/u-boot/u-boot.inc
+inherit fsl-u-boot-localversion
+
+DESCRIPTION = "U-boot provided by Freescale with focus on QorIQ boards"
 HOMEPAGE = "http://u-boot.sf.net"
 SECTION = "bootloaders"
 PROVIDES = "virtual/bootloader u-boot"
@@ -14,6 +17,8 @@ LIC_FILES_CHKSUM = " \
 PV_append = "+fslgit"
 INHIBIT_DEFAULT_DEPS = "1"
 DEPENDS = "boot-format-native libgcc ${@base_contains('TCMODE', 'external-fsl', '', 'virtual/${TARGET_PREFIX}gcc', d)}"
+DEPENDS_append_qoriq-arm = " change-file-endianess-native dtc-native tcl-native"
+DEPENDS_append_qoriq-ppc = " boot-format-native"
 
 inherit deploy
 
@@ -52,17 +57,10 @@ S = '${@base_conditional("USRC", "", "${WORKDIR}/git", "${USRC}", d)}'
 
 EXTRA_OEMAKE = 'CROSS_COMPILE=${WRAP_TARGET_PREFIX} CC="${WRAP_TARGET_PREFIX}gcc ${TOOLCHAIN_OPTIONS}"'
 
-do_compile () {
+do_compile_qoriq-ppc() {
     unset LDFLAGS
     unset CFLAGS
     unset CPPFLAGS
-
-    if [ ! -e ${B}/.scmversion -a ! -e ${S}/.scmversion ]
-    then
-        head=`git rev-parse --verify --short HEAD 2> /dev/null`
-        printf "%s%s%s" ${UBOOT_LOCALVERSION} +g $head > ${B}/.scmversion
-        printf "%s%s%s" ${UBOOT_LOCALVERSION} +g $head > ${S}/.scmversion
-    fi
 
     if [ "x${UBOOT_MACHINES}" = "x" ]; then
         UBOOT_MACHINES=${UBOOT_MACHINE}
@@ -130,7 +128,20 @@ do_compile () {
     done
 }
 
-do_install(){
+do_compile_append_qoriq-arm () {
+    if [ "x${UBOOT_CONFIG}" != "x" ]
+    then
+        for config in ${UBOOT_MACHINE}; do
+            case "${config}" in
+                *spi*) tclsh ${STAGING_BINDIR_NATIVE}/byte_swap.tcl ${S}/${config}/u-boot-dtb.bin ${S}/${config}/u-boot.swap.bin 8
+                mv ${S}/${config}/u-boot.swap.bin ${S}/u-boot-${type}.${UBOOT_SUFFIX};;
+                *nand* | *sdcard*) mv ${S}/${config}/u-boot-with-spl-pbl.bin ${S}/${config}/u-boot.bin;;
+            esac
+        done
+    fi
+}
+
+do_install_append_qoriq-ppc() {
     if [ "x${UBOOT_MACHINES}" = "x" ]; then
         UBOOT_MACHINES=${UBOOT_MACHINE}
     fi
@@ -156,7 +167,7 @@ do_install(){
     done
 }
 
-do_deploy(){
+do_deploy_append_qoriq-ppc() {
     if [ "x${UBOOT_MACHINES}" = "x" ]; then
         UBOOT_MACHINES=${UBOOT_MACHINE}
     fi
@@ -188,5 +199,7 @@ addtask deploy after do_install
 
 PACKAGES += "${PN}-images"
 FILES_${PN}-images += "/boot"
+
+COMPATIBLE_MACHINE = "(qoriq)"
 
 ALLOW_EMPTY_${PN} = "1"
