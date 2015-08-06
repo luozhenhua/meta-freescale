@@ -13,13 +13,17 @@ SRC_URI = "git://git.freescale.com/ppc/sdk/apptrk.git;nobranch=1 \
 "
 SRCREV = "cbed10997c5e2a4aaa004fb0e1efec858bf1bbe1"
 
+EXTRA_OEMAKE_qoriq-arm = "ARCH=arm"
+
+CFLAGS += "-I${STAGING_INCDIR} -ISource/Linux -ISource/Portable"
+CFLAGS_qoriq-arm += "-ISource/Linux_ARM -ISource/ARM"
+CFLAGS_qoriq-ppc += "-ISource/Linux_PA -ISource/PA -DPPC"
+CFLAGS_powerpc64 += "-DENABLE_64BIT_SUPPORT"
+
 S = "${WORKDIR}/git"
 
-EXTRA_OEMAKE = ""
-
-CFLAGS += " -I${STAGING_INCDIR}"
-CFLAGS_append_powerpc64 = " -DENABLE_64BIT_SUPPORT"
-
 do_install() {
-        oe_runmake install DESTDIR=${D}
+    oe_runmake install DESTDIR=${D}
 }
+
+COMPATIBLE_MACHINE = "(qoriq)"
