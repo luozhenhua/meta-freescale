@@ -17,7 +17,15 @@ SRCREV = "00ac004143e9fe46944a1885b04268fcd3a95a3a"
 
 S = "${WORKDIR}/git"
 
-QEMU_TARGETS = "arm"
+QEMU_TARGETS_qoriq-ppc = "ppc"
+QEMU_TARGETS_qoriq-arm = "arm"
+PPC_OECONF = '${SDL} --cross-prefix=${TARGET_PREFIX} --disable-werror --disable-vnc --disable-bluez --disable-curl --enable-libusb'
+EXTRA_OECONF_e5500-64b = "--target-list=ppc64-softmmu ${PPC_OECONF}"
+EXTRA_OECONF_e6500-64b = "--target-list=ppc64-softmmu ${PPC_OECONF}"
+EXTRA_OECONF_e6500 = "--target-list=ppc64-softmmu ${PPC_OECONF}"
+EXTRA_OECONF_e5500 = "--target-list=ppc64-softmmu ${PPC_OECONF}"
+EXTRA_OECONF_e500v2 = "--target-list=ppc-softmmu ${PPC_OECONF}"
+EXTRA_OECONF_e500mc = "--target-list=ppc-softmmu ${PPC_OECONF}"
 
 inherit pkgconfig
 
@@ -28,7 +36,7 @@ do_configure_prepend() {
 
 do_configure_append () {
     if ! grep 'CONFIG_FDT=y' config-host.mak; then
-         echo "CONFIG_RDMA=y" >> config_host_mak
+        echo "CONFIG_RDMA=y" >> config-host.mak
     fi
 }
 
@@ -44,6 +52,9 @@ do_install_append() {
 }
 
 FILES_${PN} += "/usr/share/qemu/"
+INSANE_SKIP_${PN} += "dev-deps"
 
-# FIXME: Avoid WARNING due missing patch for native/nativesdk
+# The QEMU version targets for the FSL solicon
 BBCLASSEXTEND = ""
+
+COMPATIBLE_MACHINE = "(qoriq)"
