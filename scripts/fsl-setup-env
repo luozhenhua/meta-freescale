@@ -223,6 +223,7 @@ LAYER_LIST=" \
     meta-fsl-local-build \
     meta-fsl-testing \
     meta-fsl-dataplane \
+    meta-fsl-bnsp \
 "
 if [ "$setup_g" == "true" ]; then
 LAYER_LIST="$LAYER_LIST \
